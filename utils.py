@@ -1,11 +1,3 @@
-"""
-utils.py
-Chess notation parser and display helpers.
-Supports algebraic notation (e.g., 'e2e4') and FEN string handling.
-"""
-
-# File: chess_automaton/utils.py
-
 def square_to_coords(square):
     """
     Convert algebraic notation (e.g., 'e4') to board coordinates (row, col).
@@ -59,14 +51,14 @@ def display_board_ascii(board_grid):
     board_grid is 8x8 list of piece symbols or '.' for empty.
     """
     lines = []
-    lines.append("  a b c d e f g h")
-    lines.append("  ---------------")
+    lines.append("\t\t   a b c d e f g h")
+    lines.append("\t\t  ---------------")
     for i, row in enumerate(board_grid):
         rank = str(8 - i)
         row_str = " ".join(str(cell) if cell != '.' else '.' for cell in row)
-        lines.append(f"{rank}| {row_str} |{rank}")
-    lines.append("  ---------------")
-    lines.append("  a b c d e f g h")
+        lines.append(f"\t\t{rank}| {row_str} |{rank}")
+    lines.append("\t\t  ---------------")
+    lines.append("\t\t   a b c d e f g h")
     return "\n".join(lines)
 
 def piece_symbol(piece_type, color):
