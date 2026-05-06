@@ -64,7 +64,7 @@ def display_board_ascii(board_grid):
 def piece_symbol(piece_type, color):
     """Return Unicode chess symbol for piece."""
     symbols = {
-        'white': {'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙'},
-        'black': {'K': '♚', 'Q': '♛', 'R': '♜', 'B': '♝', 'N': '♞', 'P': '♟'}
+        'white': {'K': '♚', 'Q': '♛', 'R': '♜', 'B': '♝', 'N': '♞', 'P': '♟'},
+        'black': {'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙'}
     }
     return symbols.get(color, {}).get(piece_type, '?')

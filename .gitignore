@@ -1,4 +1,8 @@
 *.pyc
 .md
 *.fen
+*.puml
 
+.codex
+.agents
+__pycache__
