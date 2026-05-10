@@ -4,20 +4,18 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)]()
 [![Status](https://img.shields.io/badge/Status-Complete-brightgreen)]()
 
-> A fully functional command-line chess game built in Python, implementing core chess mechanics through the lens of **Automata Theory** — DFA, NFA, PDA, and formal state encoding.
+> A fully functional command-line chess game built in Python, implementing core chess mechanics through **Automata Theory** — centered on a deterministic finite automaton (DFA) move validator with visual execution traces.
 
 ---
 
 ## 🎯 Project Overview
 
-This project was developed as a **1-week academic/technical challenge** to bridge theoretical computer science (automata theory) with practical software engineering. Every major component maps directly to an automaton concept:
+This project was developed as a **1-week academic/technical challenge** to bridge theoretical computer science (automata theory) with practical software engineering. The centerpiece is a **DFA move validation pipeline** that deterministically checks every chess move through a sequence of gated states.
 
 | Chess Concept | Automaton Equivalent | Implementation |
 |-------------|---------------------|----------------|
 | **Board Position** | DFA State | `board.py` — 8×8 grid state representation |
 | **Legal Move Check** | DFA Transition δ | `main/DFA_move_validator.py` — deterministic validation pipeline |
-| **Game Tree Search** | NFA State Exploration | `ai_engine.py` — minimax with α-β pruning |
-| **Move History / Undo** | PDA Stack Operations | `game_engine.py` — push/pop state snapshots |
 | **Save/Load Games** | FEN State Encoding | `state_manager.py` — Forsyth-Edwards Notation |
 
 ---
@@ -31,7 +29,7 @@ chess_automaton/
 ├── pieces.py                     # Piece classes with move generators (DFA Transitions)
 ├── validator.py                  # Thin re-export: from main.DFA_move_validator import MoveValidator
 ├── game_engine.py                # State machine — turn management, special moves, undo
-├── ai_engine.py                  # NFA exploration — minimax with α-β pruning
+├── ai_engine.py                  # Minimax search with α-β pruning
 ├── state_manager.py              # FEN save/load persistence
 ├── utils.py                      # Notation parser, display helpers, coordinate conversion
 ├── README.md                     # This file
@@ -47,18 +45,18 @@ chess_automaton/
 
 ### File Responsibilities
 
-| File | Lines | Purpose | Automaton Role |
-|------|-------|---------|---------------|
-| `utils.py` | ~69 | Notation parser, ASCII renderer, coord conversion | Helpers |
-| `pieces.py` | ~218 | 6 piece classes with rule-based move generation | **DFA δ transitions** |
-| `board.py` | ~121 | 8×8 grid, FEN parser, state copying | **DFA State** |
-| `validator.py` | ~1 | Re-export of `MoveValidator` from `main.DFA_move_validator` | **DFA Validator proxy** |
-| `game_engine.py` | ~267 | Turn management, special moves, undo/redo | **State Machine + PDA** |
-| `ai_engine.py` | ~205 | Minimax search, α-β pruning, evaluation | **NFA Explorer** |
-| `state_manager.py` | ~123 | FEN encode/decode, file I/O | **State Encoder** |
-| `main.py` | ~219 | CLI interface, menu system, command handler | **Interface** |
-| `main/DFA_move_validator.py` | ~1,484 | Self-contained DFA validator, CLI/GUI | **DFA Validator (canonical)** |
-| `main/generate_dfa_diagram.py` | ~260 | SVG generator for the DFA pipeline | **Diagram** |
+| File | Lines | Purpose |
+|------|-------|---------|
+| `utils.py` | ~69 | Notation parser, ASCII renderer, coord conversion |
+| `pieces.py` | ~218 | 6 piece classes with rule-based move generation |
+| `board.py` | ~121 | 8×8 grid, FEN parser, state copying |
+| `validator.py` | ~1 | Re-export of `MoveValidator` from `main.DFA_move_validator` |
+| `game_engine.py` | ~267 | Turn management, special moves, undo/redo |
+| `ai_engine.py` | ~205 | Minimax search, α-β pruning, evaluation |
+| `state_manager.py` | ~123 | FEN encode/decode, file I/O |
+| `main.py` | ~219 | CLI interface, menu system, command handler |
+| `main/DFA_move_validator.py` | ~1,484 | Self-contained DFA validator, CLI/GUI |
+| `main/generate_dfa_diagram.py` | ~260 | SVG generator for the DFA pipeline |
 
 **Total: ~2,969 lines of Python**
 
@@ -131,9 +129,7 @@ python main/generate_dfa_diagram.py
 
 ---
 
-## 🧠 Automaton Theory Deep Dive
-
-### The DFA Move Validator
+## 🧠 DFA Move Validator Deep Dive
 
 The heart of the engine is a **deterministic finite automaton** that validates every chess move through a strict pipeline. The diagram below is the canonical reference for how a move string is processed.
 
@@ -174,44 +170,9 @@ On every validation attempt, the DFA produces a `trace` — a list of `(status, 
 
 On rejection, the trace shows exactly which state failed and why; skipped states are marked `(—, "(skipped)")`.
 
-### 2. Non-deterministic Finite Automaton (NFA) — AI Search
+### FEN — Compact State Encoding
 
-The game tree is an **NFA** where each node non-deterministically branches into all legal moves:
-
-```
-S₀ --[e2e4]--> S₁₁ --[e7e5]--> S₂₁₁ --[Nf3]--> S₃₁₁₁ (+0.5 eval)
-   |            |             |
-   |            |             +--[Bc4]--> S₃₁₁₂ (+0.2 eval)  ✗ [pruned]
-   |            |
-   |            +--[d7d5]--> S₂₁₂ --[exd5]--> ...
-   |
-   +--[d2d4]--> S₁₂ --[d7d5]--> ...
-```
-
-- **Minimax**: Resolves NFA non-determinism by choosing optimal paths
-- **α-β Pruning**: Eliminates NFA branches that cannot improve the outcome
-- **Position Evaluation**: Weighted automaton output scoring material + position
-
-### 3. Pushdown Automaton (PDA) — Move History
-
-Move history uses a **stack** (LIFO) for undo functionality:
-
-```
-PDA = (Q, Σ, Γ, δ, q₀, Z₀, F)
-- Q = {game states}
-- Σ = {chess moves}
-- Γ = {state snapshots}
-- δ: (state, move, stack_top) → (new_state, push/pop)
-- Z₀ = empty stack
-```
-
-**Operations**:
-- **PUSH**: On every move, save board snapshot + metadata to `move_history[]`
-- **POP**: On undo, pop last snapshot and restore board state
-
-### 4. FEN — Compact State Encoding
-
-[Forsyth-Edwards Notation](https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation) encodes a complete DFA state in ~80 characters:
+[Forsyth-Edwards Notation](https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation) encodes a complete board state in ~80 characters:
 
 ```
 rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e3 0 1
@@ -340,20 +301,6 @@ The engine has been tested against:
 
 ---
 
-## 📚 Educational Value
-
-This project demonstrates:
-
-| Theory | Practical Application |
-|--------|----------------------|
-| **DFA Design** | Move validation pipeline with accept/reject states |
-| **NFA to DFA** | Game tree exploration with deterministic minimax resolution |
-| **PDA Stack** | LIFO move history for undo operations |
-| **State Encoding** | FEN as a bijective state-space compression |
-| **Complexity Analysis** | O(b^d) minimax vs O(b^(d/2)) α-β pruning |
-
----
-
 ## 🔮 Future Enhancements
 
 - [ ] Opening book integration (precomputed DFA transitions)
@@ -362,7 +309,7 @@ This project demonstrates:
 - [ ] Transposition tables (FEN-based hashing)
 - [ ] UCI protocol support (play against other engines)
 - [ ] GUI using `curses` or `pygame`
-- [ ] Neural network evaluation (replace weighted automaton)
+- [ ] Neural network evaluation (replace weighted evaluation)
 
 ---
 
