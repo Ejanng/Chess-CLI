@@ -22,34 +22,6 @@ This project was developed as a **1-week academic/technical challenge** to bridg
 
 ---
 
-## ✨ Features
-
-### Gameplay
-- ✅ **Human vs AI** — Play against a computer opponent with adjustable difficulty (depth 1–5)
-- ✅ **Human vs Human** — Two-player mode on the same machine
-- ✅ **Full Legal Move Validation** — All standard chess rules including special moves
-- ✅ **Special Moves** — Castling, en passant, pawn promotion (CLI prompts for choice; AI auto-queen)
-- ✅ **Check / Checkmate / Stalemate Detection** — Automatic game-end detection
-- ✅ **Undo Move** — Revert to previous positions (PDA stack pop)
-
-### AI Engine
-- ✅ **Minimax Algorithm** — Adversarial search for optimal play
-- ✅ **Alpha-Beta Pruning** — Efficient branch elimination (NFA pruning)
-- ✅ **Adjustable Depth** — Choose search depth (1 = easy, 5 = challenging)
-- ✅ **Position Evaluation** — Material + positional scoring
-
-### Standalone DFA Validator
-- ✅ **CLI with Visual Traces** — Boxed ASCII DFA execution trace for every move attempt
-- ✅ **Optional Tkinter GUI** — Interactive board, DFA state diagram, and move history
-- ✅ **FEN File Loading** — Load any position for targeted validation
-- ✅ **SVG Diagram Generation** — Visual diagram of the 5-state DFA pipeline
-
-### Persistence
-- ✅ **FEN Save/Load** — Export and import games using standard FEN notation
-- ✅ **Move History** — Track all moves in algebraic notation
-
----
-
 ## 🗂️ Project Structure
 
 ```
@@ -141,46 +113,6 @@ python main/generate_dfa_diagram.py
 ```
 - Writes `main/DFA_diagram.svg`.
 
-### Sample Session
-
-```
-    ╔═══════════════════════════════════════════════════════════╗
-    ║           AUTOMATON CHESS ENGINE v1.0                     ║
-    ║     Deterministic & Non-deterministic Finite Automata     ║
-    ║                    CLI Edition                            ║
-    ╚═══════════════════════════════════════════════════════════╝
-
-Select game mode:
-  1. Human (White) vs AI (Black)
-  2. Human vs Human
-Enter choice [1]: 1
-AI difficulty (1-5, default 3): 3
-AI opponent ready (depth=3)
-
-==================================================
-  a b c d e f g h
-  ---------------
-8|r n b q k b n r|8
-7|p p p p p p p p|7
-6|. . . . . . . .|6
-5|. . . . . . . .|5
-4|. . . . . . . .|4
-3|. . . . . . . .|3
-2|P P P P P P P P|2
-1|R N B Q K B N R|1
-  ---------------
-  a b c d e f g h
-
-White to move.
-
-White> e2e4
-Move: e2e4
-
-[AI thinking...]
-AI plays: e7e5
-Nodes evaluated: 1247
-```
-
 ---
 
 ## 🎮 Controls & Commands
@@ -199,126 +131,48 @@ Nodes evaluated: 1247
 
 ---
 
-## 📖 Function Reference
-
-### `main.py` — CLI Entry Point
-
-`main.py` is the full chess game's command-line interface. It wires together the game engine, AI engine, and state manager into an interactive loop.
-
-| Function | Description |
-|----------|-------------|
-| `print_banner()` | Prints the ASCII title banner at startup. |
-| `print_help()` | Displays the command reference and special-move instructions. |
-| `get_promotion_choice()` | Prompts the user to choose a promotion piece (`q`/`r`/`b`/`n`). Defaults to Queen. |
-| `main()` | **Main game loop.** Sets up the engine, selects game mode, configures AI depth, then loops: AI turn (if active) → human input → command dispatch → move validation → board display → game-over detection. Handles `quit`, `help`, `board`, `fen`, `undo`, `save`, `load`, and move parsing. |
-
-**Key behavior in `main()`:**
-- On `undo` in AI mode, undoes twice to revert both the AI's move and the player's move.
-- On `load`, resets the move log and recreates the validator so the loaded board is fully synchronized.
-- Detects pawn promotion by checking if a Pawn reaches the final rank before calling `engine.make_move()`.
-
----
-
-### `main/DFA_move_validator.py` — Standalone DFA Validator
-
-This ~1,484-line module is intentionally **self-contained**. It re-implements board logic, piece classes, and the full DFA validation pipeline so it can run standalone for educational demonstration.
-
-#### Helper Functions
-
-| Function | Description |
-|----------|-------------|
-| `square_to_coords(square)` | Converts algebraic notation (`e4`) to zero-based `(row, col)`. Returns `None` on invalid input. |
-| `coords_to_square(row, col)` | Converts `(row, col)` back to algebraic notation. Returns `None` if out of bounds. |
-| `parse_move_input(move_str)` | Parses `e2e4` or `e2-e4` into `((from_r, from_c), (to_r, to_c))`. Uses regex `([a-h][1-8])-?([a-h][1-8])`. |
-| `piece_title(piece)` | Returns a human-readable label like `"White Pawn"`. |
-| `piece_symbol(piece_type, color)` | Returns the correct Unicode chess symbol (e.g., `♔`, `♚`). |
-
-#### Piece Classes
-
-All inherit from `Piece(color, piece_type)` and implement `get_possible_moves(row, col, board)`.
-
-| Class | Key Logic |
-|-------|-----------|
-| `Pawn` | Forward 1, forward 2 from start rank, diagonal capture, en passant detection via `board.en_passant_target`. |
-| `Knight` | 8 L-shaped offsets; can jump over pieces. |
-| `Bishop` | Diagonal `_slide()` along 4 directional vectors. |
-| `Rook` | Orthogonal `_slide()` along 4 directional vectors. |
-| `Queen` | Reuses `Bishop._slide()` + `Rook._slide()` combined. |
-| `King` | 1 square any direction; castling (2-square horizontal) when rights, rook, and path are valid. |
-
-#### `Board` Class
-
-| Method | Description |
-|--------|-------------|
-| `from_fen(fen_string)` | Class method. Parses a FEN string into a fully populated `Board` instance including piece placement, active color, castling rights, en passant target, halfmove clock, and fullmove number. |
-| `load_from_file(filename)` | Class method. Reads the first line of a file as FEN and calls `from_fen()`. |
-| `copy()` | Deep-copies the board, preserving grid state, piece `has_moved` flags, castling rights, en passant target, and clock counters. |
-| `get_piece(row, col)` | Returns the piece at `(row, col)` or `"."` if empty. |
-| `set_piece(row, col, piece)` | Places a piece on the grid. |
-| `find_king(color)` | Scans the grid to locate the king of the given color. |
-| `display()` | Returns a Unicode ASCII art board with rank/file labels. |
-| `apply_move(from_coords, to_coords)` | Executes a move, updates `has_moved`, handles castling rook movement, en passant capture, pawn promotion (auto-Queen), and revokes castling rights when king or rooks move. |
-
-#### `MoveValidator` Class — The DFA Engine
-
-| Method | Description |
-|--------|-------------|
-| `validate(move_str)` | **Full 5-state DFA pipeline.** Returns `(is_valid, trace, error_msg)`. Stages: S0 INPUT (parse) → S1 BOUNDS → S2 PIECE (color check) → S3 RULES (piece geometry) → S4 SAFETY (king check simulation). On first failure, halts and marks remaining states as "(skipped)". |
-| `is_valid_move(from_coords, to_coords)` | Programmatic shortcut; no string parsing, no trace. Returns boolean. |
-| `simulate_move(from_sq, to_sq)` | Returns a copied `Board` with the move applied (used for king-safety simulation). |
-| `is_king_in_check(board, color)` | Checks whether the king of `color` is under attack on the given board. |
-| `is_in_check(color)` | Convenience wrapper using the validator's current board. |
-| `has_any_legal_moves(color)` | Returns `True` if `color` has at least one legal move in the current position. |
-| `get_all_legal_moves(color)` | Generates every `((from_r, from_c), (to_r, to_c))` that passes all 5 DFA stages. |
-| `_validate_rules(from_coords, to_coords, piece)` | Delegates to piece-specific validators (`_validate_pawn_move`, `_validate_slider_move`, `_validate_king_move`). |
-| `_would_leave_king_in_check(from_coords, to_coords, piece)` | Simulates the move on a copied board and returns `True` if the moving side's king would be in check. |
-| `_is_square_attacked(board, row, col, defending_color)` | Checks if any opponent piece attacks `(row, col)`. |
-
-#### Trace Rendering Functions
-
-| Function | Description |
-|----------|-------------|
-| `render_trace(trace, accepted, ...)` | Builds the boxed ASCII trace output with Unicode box-drawing characters. |
-| `normalize_trace(trace)` | Ensures all 5 DFA states appear in the trace map; missing states become `(—, "Awaiting traversal")`. |
-| `summary_text(accepted, ...)` | One-line result summary for CLI and GUI surfaces. |
-| `print_turn_prompt(board)` | Prints `\n{Color} to move.` |
-| `load_board_or_exit(fen_path)` | Loads a board from a FEN file; returns `None` on failure. |
-
-#### CLI & GUI Entry Points
-
-| Function / Class | Description |
-|------------------|-------------|
-| `run_cli(fen_path)` | Loads a position, prints the board, and loops reading moves. On each input, runs `MoveValidator.validate()`, prints the boxed trace, and (if legal) applies the move to the board. Accepts `quit` to exit. |
-| `DfaTraversalApp` | **Tkinter GUI class.** Builds a multi-panel interface: board grid, move input, DFA stepper canvas, state details list, rendered trace box, and move history. Colors nodes green (✓), red (✗), or gray (—) and refreshes dynamically after each validation. |
-| `run_gui(fen_path)` | Lazily imports `tkinter`, creates the root window, instantiates `DfaTraversalApp`, and starts `mainloop()`. |
-| `parse_args(argv)` | Parses `--gui` flag and optional FEN file path from command-line arguments. |
-| `main(argv)` | Dispatches to `run_gui()` or `run_cli()` based on parsed arguments. |
-
----
-
 ## 🧠 Automaton Theory Deep Dive
 
-### 1. Deterministic Finite Automaton (DFA) — Move Validation
+### The DFA Move Validator
 
-The move validator implements a **5-state DFA**:
-
-```
-Input → Bounds Check → Piece Check → Move Rules DFA → King Safety Check → {Accept, Reject}
-```
-
-- **States**: Validation stages (parsed, bounded, owned, ruled, safe)
-- **Alphabet**: Chess moves in algebraic notation (e.g., `e2e4`)
-- **Transition Function δ**: Each validation stage is a deterministic step
-- **Accept State**: Move is legal AND king is safe after execution
-- **Reject State**: Any validation fails
-
-**Key insight**: The `Piece.get_possible_moves()` method is itself a DFA transition function — given a piece type, position, and board state, it deterministically outputs all valid destination squares.
-
-### DFA State Diagram
+The heart of the engine is a **deterministic finite automaton** that validates every chess move through a strict pipeline. The diagram below is the canonical reference for how a move string is processed.
 
 ![DFA Pipeline Diagram](main/DFA_diagram.svg)
 
-> The SVG above visualizes the 5-state validation pipeline: **S0 INPUT → S1 BOUNDS → S2 PIECE → S3 RULES → S4 SAFETY**. Green edges represent accept transitions; red edges represent reject transitions. Regenerate it anytime with `python main/generate_dfa_diagram.py`.
+> **6-state pipeline + explicit REJECT sink.** Each state is a deterministic gate. If a gate fails, the pipeline halts and the remaining states are marked "(skipped)". Only **S5 ACCEPT** is the accepting state.
+>
+> Regenerate this diagram anytime with `python main/generate_dfa_diagram.py`.
+
+### Walking the States
+
+| State | Gate | Accept Transition | Reject Transition | Error Code |
+|-------|------|-------------------|-------------------|------------|
+| **S0 INPUT** | Parse algebraic notation (`e2e4` or `e2-e4`) | `valid format` → S1 | `invalid format` → **REJECT** | E001 |
+| **S1 BOUNDS** | Confirm both squares are inside the 8×8 board | `in bounds` → S2 | `out of bounds` → **REJECT** | E001 |
+| **S2 PIECE** | Confirm the source square holds a piece of the active color | `valid piece` → S3 | `empty square` / `wrong color` → **REJECT** | E002 / E003 |
+| **S3 RULES** | Apply piece-movement rules and special-move rules (castling, en passant) | `valid rules` → S4 | `illegal move` / `path blocked` / `self-capture` → **REJECT** | E004 / E005 / E007 |
+| **S4 SAFETY** | Simulate the move; reject if the moving side's king would be in check | `king safe` → S5 | `king in check` → **REJECT** | E006 |
+| **S5 ACCEPT** | All gates passed; the move is legal | — | — | — |
+
+### Trace Output
+
+On every validation attempt, the DFA produces a `trace` — a list of `(status, state_label, message)` tuples consumed by the CLI and GUI:
+
+```
+┌────────────────────────────────────────────────────┐
+│         DFA MOVE VALIDATION TRACE                  │
+├────────────────────────────────────────────────────┤
+│  [✓] S0 INPUT   : "e2e4" parsed                    │
+│  [✓] S1 BOUNDS  : e2 ∈ board, e4 ∈ board           │
+│  [✓] S2 PIECE   : White Pawn at e2                 │
+│  [✓] S3 RULES   : Pawn moves e2→e4 ✓               │
+│  [✓] S4 SAFETY  : King safe after move             │
+├────────────────────────────────────────────────────┤
+│  ✓ ACCEPT — Move is LEGAL                          │
+└────────────────────────────────────────────────────┘
+```
+
+On rejection, the trace shows exactly which state failed and why; skipped states are marked `(—, "(skipped)")`.
 
 ### 2. Non-deterministic Finite Automaton (NFA) — AI Search
 
@@ -373,31 +227,91 @@ rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e3 0 1
 
 ---
 
-## 📊 Architecture Diagram
+## 📖 Function Reference
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  LAYER 1: CLI Interface (main.py)                           │
-│  Input Parser • Display Renderer • Command Handler          │
-├─────────────────────────────────────────────────────────────┤
-│  LAYER 2: Game Engine (game_engine.py)                      │
-│  Turn Management • State Transitions • Special Moves        │
-│  Game End Detection • Move History (Undo)                   │
-├───────────────────────┬───────────────────────────────────────┤
-│  LAYER 3: DFA         │  LAYER 3: NFA                         │
-│  Move Validator       │  AI Engine                            │
-│  (main/DFA_move_      │  (ai_engine.py)                       │
-│   validator.py)       │  Minimax → α-β Pruning → Eval         │
-│  Bounds → Rules →     │  Game Tree Exploration                │
-│  King Safety Check    │                                       │
-├───────────────────────┴───────────────────────────────────────┤
-│  LAYER 4: Board & Pieces (board.py, pieces.py)              │
-│  8×8 Grid • Piece Classes • Move Generators • FEN Codec     │
-├─────────────────────────────────────────────────────────────┤
-│  LAYER 5: Utilities (utils.py, state_manager.py)            │
-│  Notation Parser • Display Helpers • FEN Save/Load          │
-└─────────────────────────────────────────────────────────────┘
-```
+### `main.py` — CLI Entry Point
+
+| Function | Description |
+|----------|-------------|
+| `print_banner()` | Prints the ASCII title banner at startup. |
+| `print_help()` | Displays the command reference and special-move instructions. |
+| `get_promotion_choice()` | Prompts the user to choose a promotion piece (`q`/`r`/`b`/`n`). Defaults to Queen. |
+| `main()` | **Main game loop.** Sets up the engine, selects game mode, configures AI depth, then loops: AI turn → human input → command dispatch → move validation → board display. Handles `quit`, `help`, `board`, `fen`, `undo`, `save`, `load`, and move parsing. |
+
+**Key behavior:**
+- On `undo` in AI mode, undoes twice to revert both the AI's move and the player's move.
+- On `load`, resets the move log and recreates the validator so the loaded board is fully synchronized.
+- Detects pawn promotion by checking if a Pawn reaches the final rank before calling `engine.make_move()`.
+
+---
+
+### `main/DFA_move_validator.py` — Standalone DFA Validator
+
+This ~1,484-line module is intentionally **self-contained**. It re-implements board logic, piece classes, and the full DFA validation pipeline so it can run standalone for educational demonstration.
+
+#### Helper Functions
+
+| Function | Description |
+|----------|-------------|
+| `square_to_coords(square)` | Converts algebraic notation (`e4`) to zero-based `(row, col)`. Returns `None` on invalid input. |
+| `coords_to_square(row, col)` | Converts `(row, col)` back to algebraic notation. Returns `None` if out of bounds. |
+| `parse_move_input(move_str)` | Parses `e2e4` or `e2-e4` into `((from_r, from_c), (to_r, to_c))`. Uses regex `([a-h][1-8])-?([a-h][1-8])`. |
+| `piece_title(piece)` | Returns a human-readable label like `"White Pawn"`. |
+| `piece_symbol(piece_type, color)` | Returns the correct Unicode chess symbol (e.g., `♔`, `♚`). |
+
+#### Piece Classes
+
+All inherit from `Piece(color, piece_type)` and implement `get_possible_moves(row, col, board)`.
+
+| Class | Key Logic |
+|-------|-----------|
+| `Pawn` | Forward 1, forward 2 from start rank, diagonal capture, en passant detection via `board.en_passant_target`. |
+| `Knight` | 8 L-shaped offsets; can jump over pieces. |
+| `Bishop` | Diagonal `_slide()` along 4 directional vectors. |
+| `Rook` | Orthogonal `_slide()` along 4 directional vectors. |
+| `Queen` | Reuses `Bishop._slide()` + `Rook._slide()` combined. |
+| `King` | 1 square any direction; castling (2-square horizontal) when rights, rook, and path are valid. |
+
+#### `Board` Class
+
+| Method | Description |
+|--------|-------------|
+| `from_fen(fen_string)` | Class method. Parses a FEN string into a fully populated `Board` instance including piece placement, active color, castling rights, en passant target, halfmove clock, and fullmove number. |
+| `load_from_file(filename)` | Class method. Reads the first line of a file as FEN and calls `from_fen()`. |
+| `copy()` | Deep-copies the board, preserving grid state, piece `has_moved` flags, castling rights, en passant target, and clock counters. |
+| `get_piece(row, col)` | Returns the piece at `(row, col)` or `"."` if empty. |
+| `set_piece(row, col, piece)` | Places a piece on the grid. |
+| `find_king(color)` | Scans the grid to locate the king of the given color. |
+| `display()` | Returns a Unicode ASCII art board with rank/file labels. |
+| `apply_move(from_coords, to_coords)` | Executes a move, updates `has_moved`, handles castling rook movement, en passant capture, pawn promotion (auto-Queen), and revokes castling rights when king or rooks move. |
+
+#### `MoveValidator` Class — The DFA Engine
+
+| Method | Description |
+|--------|-------------|
+| `validate(move_str)` | **Full 6-state DFA pipeline.** Returns `(is_valid, trace, error_msg)`. Stages: S0 INPUT (parse) → S1 BOUNDS → S2 PIECE (color check) → S3 RULES (piece geometry) → S4 SAFETY (king check simulation) → S5 ACCEPT. On first failure, halts and marks remaining states as "(skipped)". |
+| `is_valid_move(from_coords, to_coords)` | Programmatic shortcut; no string parsing, no trace. Returns boolean. |
+| `simulate_move(from_sq, to_sq)` | Returns a copied `Board` with the move applied (used for king-safety simulation). |
+| `is_king_in_check(board, color)` | Checks whether the king of `color` is under attack on the given board. |
+| `is_in_check(color)` | Convenience wrapper using the validator's current board. |
+| `has_any_legal_moves(color)` | Returns `True` if `color` has at least one legal move in the current position. |
+| `get_all_legal_moves(color)` | Generates every `((from_r, from_c), (to_r, to_c))` that passes all DFA stages. |
+| `_validate_rules(from_coords, to_coords, piece)` | Delegates to piece-specific validators (`_validate_pawn_move`, `_validate_slider_move`, `_validate_king_move`). |
+| `_would_leave_king_in_check(from_coords, to_coords, piece)` | Simulates the move on a copied board and returns `True` if the moving side's king would be in check. |
+| `_is_square_attacked(board, row, col, defending_color)` | Checks if any opponent piece attacks `(row, col)`. |
+
+#### Trace Rendering & Entry Points
+
+| Function / Class | Description |
+|------------------|-------------|
+| `render_trace(trace, accepted, ...)` | Builds the boxed ASCII trace output with Unicode box-drawing characters. |
+| `normalize_trace(trace)` | Ensures all 5 DFA states appear in the trace map; missing states become `(—, "Awaiting traversal")`. |
+| `summary_text(accepted, ...)` | One-line result summary for CLI and GUI surfaces. |
+| `run_cli(fen_path)` | Loads a position, prints the board, and loops reading moves. On each input, runs `MoveValidator.validate()`, prints the boxed trace, and (if legal) applies the move. Accepts `quit` to exit. |
+| `DfaTraversalApp` | **Tkinter GUI class.** Multi-panel interface: board grid, move input, DFA stepper canvas, state details, rendered trace box, and move history. Colors nodes green (✓), red (✗), or gray (—) and refreshes dynamically. |
+| `run_gui(fen_path)` | Lazily imports `tkinter`, creates the root window, instantiates `DfaTraversalApp`, and starts `mainloop()`. |
+| `parse_args(argv)` | Parses `--gui` flag and optional FEN file path from command-line arguments. |
+| `main(argv)` | Dispatches to `run_gui()` or `run_cli()` based on parsed arguments. |
 
 ---
 
@@ -419,9 +333,10 @@ The engine has been tested against:
 
 | File | Audience | Contents |
 |------|----------|----------|
-| `README.md` | Human users | Project overview, features, getting started, architecture diagram |
-| `WRITE_UP.md` | Developers | Deep-dive technical reference for `main/DFA_move_validator.py`, including the 5-state DFA pipeline, error codes, class reference, and usage examples |
-| `AGENTS.md` | AI coding agents | Architecture, conventions, and practical guidance for making changes |
+| `README.md` | Human users | Project overview, features, getting started, DFA diagram |
+| `WRITE_UP.md` | Developers | Deep-dive technical reference for `main/DFA_move_validator.py`, including the DFA pipeline, error codes, class reference, and usage examples |
+| `AGENTS.md` | AI coding agents | Architecture, conventions, and practical guidance |
+| `main/AGENTS.md` | AI coding agents | Subpackage-specific guidance for the standalone DFA validator |
 
 ---
 
