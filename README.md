@@ -1,7 +1,7 @@
 # ♟️ Automaton Chess Engine (CLI)
 
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)]()
 [![Status](https://img.shields.io/badge/Status-Complete-brightgreen)]()
 
 > A fully functional command-line chess game built in Python, implementing core chess mechanics through the lens of **Automata Theory** — DFA, NFA, PDA, and formal state encoding.
@@ -15,7 +15,7 @@ This project was developed as a **1-week academic/technical challenge** to bridg
 | Chess Concept | Automaton Equivalent | Implementation |
 |-------------|---------------------|----------------|
 | **Board Position** | DFA State | `board.py` — 8×8 grid state representation |
-| **Legal Move Check** | DFA Transition δ | `validator.py` — deterministic validation pipeline |
+| **Legal Move Check** | DFA Transition δ | `main/DFA_move_validator.py` — deterministic validation pipeline |
 | **Game Tree Search** | NFA State Exploration | `ai_engine.py` — minimax with α-β pruning |
 | **Move History / Undo** | PDA Stack Operations | `game_engine.py` — push/pop state snapshots |
 | **Save/Load Games** | FEN State Encoding | `state_manager.py` — Forsyth-Edwards Notation |
@@ -28,7 +28,7 @@ This project was developed as a **1-week academic/technical challenge** to bridg
 - ✅ **Human vs AI** — Play against a computer opponent with adjustable difficulty (depth 1–5)
 - ✅ **Human vs Human** — Two-player mode on the same machine
 - ✅ **Full Legal Move Validation** — All standard chess rules including special moves
-- ✅ **Special Moves** — Castling, en passant, pawn promotion (auto-queen)
+- ✅ **Special Moves** — Castling, en passant, pawn promotion (CLI prompts for choice; AI auto-queen)
 - ✅ **Check / Checkmate / Stalemate Detection** — Automatic game-end detection
 - ✅ **Undo Move** — Revert to previous positions (PDA stack pop)
 
@@ -37,6 +37,12 @@ This project was developed as a **1-week academic/technical challenge** to bridg
 - ✅ **Alpha-Beta Pruning** — Efficient branch elimination (NFA pruning)
 - ✅ **Adjustable Depth** — Choose search depth (1 = easy, 5 = challenging)
 - ✅ **Position Evaluation** — Material + positional scoring
+
+### Standalone DFA Validator
+- ✅ **CLI with Visual Traces** — Boxed ASCII DFA execution trace for every move attempt
+- ✅ **Optional Tkinter GUI** — Interactive board, DFA state diagram, and move history
+- ✅ **FEN File Loading** — Load any position for targeted validation
+- ✅ **SVG Diagram Generation** — Visual diagram of the 5-state DFA pipeline
 
 ### Persistence
 - ✅ **FEN Save/Load** — Export and import games using standard FEN notation
@@ -48,30 +54,41 @@ This project was developed as a **1-week academic/technical challenge** to bridg
 
 ```
 chess_automaton/
-├── main.py              # CLI entry point & game loop
-├── board.py             # Board state representation (DFA State)
-├── pieces.py            # Piece classes with move generators (DFA Transitions)
-├── validator.py         # DFA move validation engine
-├── game_engine.py       # State machine — turn management, special moves, undo
-├── ai_engine.py         # NFA exploration — minimax with α-β pruning
-├── state_manager.py     # FEN save/load persistence
-└── utils.py             # Notation parser, display helpers, coordinate conversion
+├── main.py                       # CLI entry point & game loop
+├── board.py                      # Board state representation (DFA State)
+├── pieces.py                     # Piece classes with move generators (DFA Transitions)
+├── validator.py                  # Thin re-export: from main.DFA_move_validator import MoveValidator
+├── game_engine.py                # State machine — turn management, special moves, undo
+├── ai_engine.py                  # NFA exploration — minimax with α-β pruning
+├── state_manager.py              # FEN save/load persistence
+├── utils.py                      # Notation parser, display helpers, coordinate conversion
+├── README.md                     # This file
+├── WRITE_UP.md                   # Deep-dive technical reference for the DFA validator
+├── AGENTS.md                     # Coding agent guidance
+└── main/                         # Subpackage: enhanced DFA validator + GUI + diagram generator
+    ├── __init__.py               # Package init
+    ├── DFA_move_validator.py     # ~1,484-line standalone validator (CLI + Tkinter GUI)
+    ├── generate_dfa_diagram.py   # SVG diagram generator for the DFA pipeline
+    ├── DFA_diagram.svg           # Generated visual diagram of the DFA states
+    └── sample_position.fen       # Example FEN file
 ```
 
 ### File Responsibilities
 
 | File | Lines | Purpose | Automaton Role |
 |------|-------|---------|---------------|
-| `utils.py` | ~75 | Notation parser, ASCII renderer, coord conversion | Helpers |
-| `pieces.py` | ~180 | 6 piece classes with rule-based move generation | **DFA δ transitions** |
-| `board.py` | ~120 | 8×8 grid, FEN parser, state copying | **DFA State** |
-| `validator.py` | ~200 | Bounds, piece rules, king safety checks | **DFA Validator** |
-| `game_engine.py` | ~250 | Turn management, special moves, undo/redo | **State Machine + PDA** |
-| `ai_engine.py` | ~220 | Minimax search, α-β pruning, evaluation | **NFA Explorer** |
-| `state_manager.py` | ~130 | FEN encode/decode, file I/O | **State Encoder** |
-| `main.py` | ~200 | CLI interface, menu system, command handler | **Interface** |
+| `utils.py` | ~69 | Notation parser, ASCII renderer, coord conversion | Helpers |
+| `pieces.py` | ~218 | 6 piece classes with rule-based move generation | **DFA δ transitions** |
+| `board.py` | ~121 | 8×8 grid, FEN parser, state copying | **DFA State** |
+| `validator.py` | ~1 | Re-export of `MoveValidator` from `main.DFA_move_validator` | **DFA Validator proxy** |
+| `game_engine.py` | ~267 | Turn management, special moves, undo/redo | **State Machine + PDA** |
+| `ai_engine.py` | ~205 | Minimax search, α-β pruning, evaluation | **NFA Explorer** |
+| `state_manager.py` | ~123 | FEN encode/decode, file I/O | **State Encoder** |
+| `main.py` | ~219 | CLI interface, menu system, command handler | **Interface** |
+| `main/DFA_move_validator.py` | ~1,484 | Self-contained DFA validator, CLI/GUI | **DFA Validator (canonical)** |
+| `main/generate_dfa_diagram.py` | ~260 | SVG generator for the DFA pipeline | **Diagram** |
 
-**Total: ~1,375 lines of Python**
+**Total: ~2,969 lines of Python**
 
 ---
 
@@ -91,11 +108,38 @@ cd automaton-chess-engine
 # No external dependencies required — uses only Python standard library!
 ```
 
-### Running the Game
+### Running the Full Chess Game (CLI)
 
 ```bash
 python main.py
 ```
+
+### Running the Standalone DFA Validator (CLI)
+
+```bash
+# Default sample position
+python main/DFA_move_validator.py
+
+# Custom FEN file
+python main/DFA_move_validator.py my_position.fen
+
+# As a module
+python -m main.DFA_move_validator my_position.fen
+```
+
+### Running the Standalone DFA Validator (GUI)
+
+```bash
+python main/DFA_move_validator.py --gui
+python -m main.DFA_move_validator --gui my_position.fen
+```
+
+### Regenerating the DFA Diagram SVG
+
+```bash
+python main/generate_dfa_diagram.py
+```
+- Writes `main/DFA_diagram.svg`.
 
 ### Sample Session
 
@@ -141,17 +185,17 @@ Nodes evaluated: 1247
 
 ## 🎮 Controls & Commands
 
-| Command | Action |
-|---------|--------|
-| `e2e4` | Make a move (from square to square) |
-| `e2-e4` | Alternative move format |
-| `save` | Save current game to FEN file |
-| `load` | Load game from FEN file |
-| `undo` | Undo last move (and AI move if in AI mode) |
-| `fen` | Display current FEN string |
-| `board` | Redisplay the chess board |
-| `help` | Show help menu |
-| `quit` | Exit the game |
+| Command | Alias | Action |
+|---------|-------|--------|
+| `e2e4` | — | Make a move (from square to square) |
+| `e2-e4` | — | Alternative move format |
+| `save` | `s` | Save current game to FEN file |
+| `load` | `l` | Load game from FEN file |
+| `undo` | `u` | Undo last move (and AI move if in AI mode) |
+| `fen` | `f` | Display current FEN string |
+| `board` | `b` | Redisplay the chess board |
+| `help` | `h` | Show help menu |
+| `quit` | `q` | Exit the game |
 
 ---
 
@@ -239,15 +283,16 @@ rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e3 0 1
 ├───────────────────────┬───────────────────────────────────────┤
 │  LAYER 3: DFA         │  LAYER 3: NFA                         │
 │  Move Validator       │  AI Engine                            │
-│  (validator.py)       │  (ai_engine.py)                       │
-│  Bounds → Rules →     │  Minimax → α-β Pruning → Eval         │
-│  King Safety Check    │  Game Tree Exploration                │
+│  (main/DFA_move_      │  (ai_engine.py)                       │
+│   validator.py)       │  Minimax → α-β Pruning → Eval         │
+│  Bounds → Rules →     │  Game Tree Exploration                │
+│  King Safety Check    │                                       │
 ├───────────────────────┴───────────────────────────────────────┤
 │  LAYER 4: Board & Pieces (board.py, pieces.py)              │
 │  8×8 Grid • Piece Classes • Move Generators • FEN Codec     │
 ├─────────────────────────────────────────────────────────────┤
 │  LAYER 5: Utilities (utils.py, state_manager.py)            │
-│  Notation Parser • Display Helpers • FEN Save/Load        │
+│  Notation Parser • Display Helpers • FEN Save/Load          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -264,6 +309,16 @@ The engine has been tested against:
 - ✅ Checkmate and stalemate recognition
 - ✅ 50-move rule implementation
 - ✅ FEN round-trip consistency (save → load produces identical state)
+
+---
+
+## 📚 Documentation
+
+| File | Audience | Contents |
+|------|----------|----------|
+| `README.md` | Human users | Project overview, features, getting started, architecture diagram |
+| `WRITE_UP.md` | Developers | Deep-dive technical reference for `main/DFA_move_validator.py`, including the 5-state DFA pipeline, error codes, class reference, and usage examples |
+| `AGENTS.md` | AI coding agents | Architecture, conventions, and practical guidance for making changes |
 
 ---
 
@@ -295,7 +350,7 @@ This project demonstrates:
 
 ## 📄 License
 
-This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
+This project is licensed under the MIT License.
 
 ---
 
